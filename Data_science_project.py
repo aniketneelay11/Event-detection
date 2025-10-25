@@ -160,3 +160,52 @@ def process_data_for_binary_task(filepath, target_col, index_col=None):
 
 # --- Run PCA ---
 X_train_pca, X_test_pca, y_train, y_test = process_data_for_binary_task(DATA_FILE, TARGET_COLUMN, INDEX_COLUMN)
+
+def evaluate_model(model_name, model, X_test, y_test):
+    print(f"--- Evaluating Model: {model_name} ---")
+    y_pred = model.predict(X_test)
+    accuracy = accuracy_score(y_test, y_pred)
+    print(f"Accuracy on the test set: {accuracy:.4f}")
+
+    # Calculate and display ROC AUC Score
+    y_pred_proba = model.predict_proba(X_test)[:, 1]
+    auc_score = roc_auc_score(y_test, y_pred_proba)
+    print(f"Area Under ROC Curve (AUC): {auc_score:.4f}\n")
+
+    print("Classification Report:")
+    print(classification_report(y_test, y_pred, labels=[0, 1]))
+
+    # Confusion Matrix Plot
+    cm = confusion_matrix(y_test, y_pred)
+    plt.figure(figsize=(6, 5))
+    sns.heatmap(cm, annot=True, fmt='d', cmap='Blues',
+                xticklabels=[0, 1], yticklabels=[0, 1])
+    plt.title(f'Confusion Matrix for {model_name}', fontsize=16)
+    plt.ylabel('Actual Class', fontsize=12)
+    plt.xlabel('Predicted Class', fontsize=12)
+    plt.show()
+
+    # Plot the ROC Curve
+    fpr, tpr, thresholds = roc_curve(y_test, y_pred_proba)
+    plt.figure(figsize=(8, 6))
+    plt.plot(fpr, tpr, color='blue', lw=2, label=f'Logistic Regression (AUC = {auc_score:.2f})')
+    plt.plot([0, 1], [0, 1], color='red', lw=2, linestyle='--', label='Random Guess')
+    plt.xlabel('False Positive Rate', fontsize=12)
+    plt.ylabel('True Positive Rate (Recall)', fontsize=12)
+    plt.title('Receiver Operating Characteristic (ROC) Curve', fontsize=16)
+    plt.legend(loc='lower right')
+    plt.grid(True)
+    plt.show()
+
+
+def train_and_evaluate(X_train_pca, X_test_pca, y_train, y_test):
+    """Trains and evaluates a Logistic Regression model."""
+    print("\n--- Starting Model Training and Evaluation ---")
+
+    print("\nTraining Logistic Regression model...")
+    log_reg = LogisticRegression(max_iter=1000, random_state=42)
+    log_reg.fit(X_train_pca, y_train)
+    evaluate_model("Logistic Regression", log_reg, X_test_pca, y_test)
+
+if X_train_pca is not None:
+    train_and_evaluate(X_train_pca, X_test_pca, y_train, y_test)
