@@ -61,3 +61,30 @@ def explore_belle2_data_info(filepath, target_col):
     return df
 
 df = explore_belle2_data_info(DATA_FILE,TARGET_COLUMN)
+
+def explore_belle2_correlation(df, target_col):
+    
+    feature_columns = df.columns.drop(target_col)
+    numeric_features = df[feature_columns].select_dtypes(include=np.number).columns.tolist()
+
+    print(f"Found {len(numeric_features)} numeric features.")
+
+    # Compute correlation matrix
+    correlation_matrix = df[numeric_features].corr()
+
+    # Show top correlated pairs
+    corr_pairs = (
+        correlation_matrix.where(np.triu(np.ones(correlation_matrix.shape), k=1).astype(bool))
+        .stack()
+        .sort_values(ascending=False)
+        .head(10)
+    )
+    print("Top 10 correlated feature pairs:\n", corr_pairs, "\n")
+
+    # Plot correlation heatmap
+    plt.figure(figsize=(16, 12))
+    sns.heatmap(correlation_matrix, cmap='coolwarm', annot=False)
+    plt.title('Correlation Heatmap of Features', fontsize=16)
+    plt.show()
+
+explore_belle2_correlation(df,TARGET_COLUMN)
