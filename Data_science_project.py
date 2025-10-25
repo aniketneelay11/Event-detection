@@ -8,7 +8,7 @@ from sklearn.decomposition import PCA
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import accuracy_score, classification_report, confusion_matrix, roc_curve, roc_auc_score
 
-DATA_FILE = r'/home/aniket/Data science project/belle-II data.csv'
+DATA_FILE = r'/home/aniket/Data science project/belle-II data.csv' #add file here
 TARGET_COLUMN = 'type'
 INDEX_COLUMN = 'Unnamed: 0'
 
