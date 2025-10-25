@@ -88,3 +88,75 @@ def explore_belle2_correlation(df, target_col):
     plt.show()
 
 explore_belle2_correlation(df,TARGET_COLUMN)
+def process_data_for_binary_task(filepath, target_col, index_col=None):
+
+    # Load Data
+    try:
+        df = pd.read_csv(filepath)
+        print(f" Successfully loaded data from '{filepath}'.\n")
+    except FileNotFoundError:
+        print(f" ERROR: The file '{filepath}' was not found.")
+        return None, None, None, None
+
+    # Drop the index column if it exists
+    if index_col and index_col in df.columns:
+        df = df.drop(columns=[index_col])
+        print(f"Dropped index column: '{index_col}'")
+
+    # --- Convert to Binary Classification Task ---
+    print("Transforming target variable into a binary problem...")
+    original_counts = df[target_col].value_counts().sort_index()
+
+    df[target_col] = df[target_col].apply(lambda x: 0 if x in [0, 1] else 1)
+
+    new_counts = df[target_col].value_counts().sort_index()
+    print("Original event counts:\n", original_counts)
+    print("\nNew binary event counts (Class 0: [0,1], Class 1: [2,3,4,5]):\n", new_counts)
+    print("-" * 40)
+
+    # Separate Features and Target
+    X = df.drop(columns=[target_col])
+    y = df[target_col]
+    print(f"Original number of features: {X.shape[1]}\n")
+
+    # Split into Train/Test
+    X_train, X_test, y_train, y_test = train_test_split(
+        X, y, test_size=0.2, random_state=42, stratify=y
+    )
+
+    # Scale Features
+    scaler = StandardScaler()
+    X_train_scaled = scaler.fit_transform(X_train)
+    X_test_scaled = scaler.transform(X_test)
+    print(" Features scaled using StandardScaler.\n")
+
+    # PCA
+    pca = PCA(n_components=0.95)
+    X_train_pca = pca.fit_transform(X_train_scaled)
+    X_test_pca = pca.transform(X_test_scaled)
+
+    print(f"PCA selected {pca.n_components_} components to explain 95% of variance.")
+
+    # Show Top Features per PC
+    print("\n--- Top Contributing Features for each Principal Component ---")
+    feature_names = X.columns
+    loadings_df = pd.DataFrame(
+        pca.components_.T,
+        columns=[f'PC_{i+1}' for i in range(pca.n_components_)],
+        index=feature_names
+    )
+
+    for pc in loadings_df.columns:
+        top_features = loadings_df[pc].abs().sort_values(ascending=False).head(5)
+        print(f"\nTop 5 features for {pc}:")
+        print(top_features)
+    print("\n" + "-" * 40)
+
+    print(f"Original training data shape: {X_train.shape}")
+    print(f"PCA-transformed training data shape: {X_train_pca.shape}")
+
+    return X_train_pca, X_test_pca, y_train, y_test
+
+
+# --- Run PCA ---
+X_train_pca, X_test_pca, y_train, y_test = process_data_for_binary_task(DATA_FILE, TARGET_COLUMN, INDEX_COLUMN)
